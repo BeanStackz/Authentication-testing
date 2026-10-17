@@ -1,5 +1,8 @@
 package backend.auth_app.controllers;
 
+import java.time.Instant;
+import java.util.UUID;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,7 +18,9 @@ import org.springframework.web.bind.annotation.RestController;
 import backend.auth_app.dtos.LoginRequest;
 import backend.auth_app.dtos.TokenResponse;
 import backend.auth_app.dtos.UserDto;
+import backend.auth_app.entities.RefreshToken;
 import backend.auth_app.entities.User;
+import backend.auth_app.respositories.RefreshTokenRepository;
 import backend.auth_app.respositories.UserRepository;
 import backend.auth_app.security.JwtService;
 import backend.auth_app.services.AuthService;
@@ -30,6 +35,7 @@ public class AuthController {
     private final AuthService authService;
     private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
     private final JwtService jwtService;
     private final ModelMapper mapper;
 
@@ -51,12 +57,26 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        // GENERATE TOKEN
+        // Generate a refresh token and save it to the database
+        String jti = UUID.randomUUID().toString();
+        var refreshTokenOb = RefreshToken.builder()
+            .jti(jti)
+            .user(user)
+            .createdAt(Instant.now())
+            .expiresAt(Instant.now().plusMillis(jwtService.getRefreshTtlSeconds()))
+            .revoked(false)
+            .build();
+
+        // Save the refresh token to the database
+        refreshTokenRepository.save(refreshTokenOb);
+
+        // GENERATE ACCESS TOKEN
         String accessToken = jwtService.generateAccessToken(user);
+        String refreshToken = jwtService.generateRefreshToken(user, refreshTokenOb.getJti());
         
         TokenResponse tokenResponse = TokenResponse.of(
             accessToken,
-            "",
+            refreshToken,
             jwtService.getAccessTtlSeconds(),
             mapper.map(user, UserDto.class)
         );
