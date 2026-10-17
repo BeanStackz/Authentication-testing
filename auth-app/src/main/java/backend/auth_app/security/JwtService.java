@@ -17,9 +17,13 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import lombok.Getter;
+import lombok.Setter;
 
 
 @Service 
+@Getter 
+@Setter 
 public class JwtService {
     private final SecretKey key;
     private final long accessTtlSeconds;
@@ -105,13 +109,13 @@ public class JwtService {
     // Is Access Token
     public boolean isAccessToken(String token) {
         Claims c = parseToken(token).getPayload();
-        return "access".equals(c.get("typ"));
+        return "access".equals(c.get("type"));
     }
 
     // Is Refresh Token
     public boolean isRefreshToken(String token) {
         Claims c = parseToken(token).getPayload();
-        return "refresh".equals(c.get("typ"));
+        return "refresh".equals(c.get("type"));
     }
 
     public UUID getUserIdFromToken(String token) {

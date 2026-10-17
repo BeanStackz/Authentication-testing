@@ -57,7 +57,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 Jws<Claims> parse = jwtService.parseToken(token);
 
                 Claims payload = parse.getPayload();
-                
+
                 String userId = payload.getSubject();
                 UUID userUUID = UserHelper.parseUUID(userId);
                 userRepository.findById(userUUID).ifPresent(user -> {
@@ -84,13 +84,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 
             } catch (ExpiredJwtException e) {
-                e.printStackTrace();
+                request.setAttribute("error", "Token has expired");
+                // e.printStackTrace();
 
             } catch (MalformedJwtException e) {
-                e.printStackTrace();
+                request.setAttribute("error", "Invalid token format");
+                // e.printStackTrace();
 
             } catch (JwtException e) {
-                e.printStackTrace();
+                request.setAttribute("error", "Invalid token");
+                // e.printStackTrace();
 
             } catch (IllegalArgumentException e) {
                 e.printStackTrace();
@@ -105,6 +108,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             System.getLogger(JwtAuthenticationFilter.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
         }
 
+    }
+
+    @Override 
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String path = request.getRequestURI();
+        // Exclude the login and register endpoints from JWT authentication
+        return path.startsWith("/api/v1/auth/login");
     }
 
 
