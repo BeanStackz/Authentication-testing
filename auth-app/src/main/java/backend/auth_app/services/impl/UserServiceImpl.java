@@ -1,4 +1,4 @@
-package backend.auth_app.services;
+package backend.auth_app.services.impl;
 
 import java.util.UUID;
 
@@ -10,6 +10,7 @@ import backend.auth_app.entities.Provider;
 import backend.auth_app.entities.User;
 import backend.auth_app.exceptions.ResourceNotFoundException;
 import backend.auth_app.respositories.UserRepository;
+import backend.auth_app.services.UserService;
 import backend.auth_app.utils.UserHelper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -52,7 +53,6 @@ public class UserServiceImpl implements UserService {
 
 
         User user = userRepository.findByEmail(email).orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
-        // TODO Auto-generated method stub
         return modelMapper.map(user, UserDto.class);
     }
 
@@ -77,7 +77,7 @@ public class UserServiceImpl implements UserService {
         if (userDto.getEnable() != null) {
             existingUser.setEnable(userDto.getEnable());
         }
-        
+
         User updatedUser = userRepository.save(existingUser);
         return modelMapper.map(updatedUser, UserDto.class);
     }
