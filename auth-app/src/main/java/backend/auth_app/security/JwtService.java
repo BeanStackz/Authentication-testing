@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 import backend.auth_app.entities.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
-import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 
@@ -95,15 +94,12 @@ public class JwtService {
 
     // Parse the token
     public Jws<Claims> parseToken(String token) {
-        try{
+
             return Jwts.parser()
                     .verifyWith(key)
                     .build()
                     .parseSignedClaims(token);
-        }
-        catch (JwtException e) {
-            throw new IllegalArgumentException("Invalid JWT token", e);
-        }
+        
     }
 
     // Is Access Token
@@ -126,6 +122,16 @@ public class JwtService {
     public String getJtiFromToken(String token) {
         Claims c = parseToken(token).getPayload();
         return c.getId();
+    }
+
+    public String getEmailFromToken(String token) {
+        Claims c = parseToken(token).getPayload();
+        return c.get("email", String.class);
+    }
+
+    public List<String> getRolesFromToken(String token) {
+        Claims c = parseToken(token).getPayload();
+        return (List<String>) c.get("roles");
     }
 
 }
