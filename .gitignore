@@ -82,3 +82,5 @@ replay_pid*
 *.sqlite3
 *.h2.db
 *.mv.db
+
+application-dev.properties

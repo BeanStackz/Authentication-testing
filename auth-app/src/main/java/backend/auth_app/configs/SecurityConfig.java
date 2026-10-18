@@ -1,17 +1,18 @@
 package backend.auth_app.configs;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.oauth2.client.OAuth2LoginConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 
 import backend.auth_app.dtos.ApiError;
 import backend.auth_app.security.JwtAuthenticationFilter;
@@ -20,8 +21,14 @@ import tools.jackson.databind.ObjectMapper;
 @Configuration
 public class SecurityConfig {
 
-    @Autowired 
+    
     private JwtAuthenticationFilter jwtAuthenticationFilter;
+    private AuthenticationSuccessHandler authenticationSuccessHandler;
+
+    public SecurityConfig(AuthenticationSuccessHandler authenticationSuccessHandler, JwtAuthenticationFilter jwtAuthenticationFilter) {
+        this.authenticationSuccessHandler = authenticationSuccessHandler;
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    }
 
    
 
@@ -42,6 +49,10 @@ public class SecurityConfig {
 
         ).permitAll()
         .anyRequest().authenticated()
+        )
+        .oauth2Login((OAuth2LoginConfigurer<HttpSecurity> oauth2) -> 
+            oauth2.successHandler(authenticationSuccessHandler)
+                .failureHandler(null)
         )
         .exceptionHandling(ex -> ex
             .authenticationEntryPoint((request, response, authException) -> {
