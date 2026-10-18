@@ -28,6 +28,7 @@ import backend.auth_app.respositories.UserRepository;
 import backend.auth_app.security.CookieService;
 import backend.auth_app.security.JwtService;
 import backend.auth_app.services.AuthService;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
@@ -199,6 +200,33 @@ public class AuthController {
             // Handle authentication failure
             throw new BadCredentialsException("Username or password is incorrect");
         }
+    }
+
+
+    @PostMapping ("/logout")
+    public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response){
+        // Clear the refresh token cookie
+        
+        readRefreshTokenFromRequest(null, request).ifPresent( token -> {
+            try{
+                if(jwtService.isRefreshToken(token))
+                {
+                    String jti = jwtService.getJtiFromToken(token);
+                    refreshTokenRepository.findByJti(jti).ifPresent(refreshToken -> {
+                        refreshToken.setRevoked(true);
+                        refreshTokenRepository.save(refreshToken);
+                    });
+                }
+            }
+            catch(JwtException ignored){
+                // If the token is invalid, we can ignore it and proceed to clear the cookie
+            }
+
+        });
+
+        cookieService.clearRefreshCookie(response);
+        cookieService.addNoStoreHeader(response);
+        return ResponseEntity.noContent().build();
     }
 
 
