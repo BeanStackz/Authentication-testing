@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -29,6 +30,9 @@ public class OAuthSuccessHandler implements AuthenticationSuccessHandler {
     private final JwtService jwtService;
     private final CookieService cookieService;
     private final RefreshTokenRepository refreshTokenRepository;
+
+    @Value ("${app.auth.frontend.success-redirect:http://localhost:5173/auth/success}")
+    private String frontendSuccessUrl;
 
     public OAuthSuccessHandler(UserRepository userRepository, JwtService jwtService, CookieService cookieService, RefreshTokenRepository refreshTokenRepository) {
         this.userRepository = userRepository;
@@ -74,19 +78,33 @@ public class OAuthSuccessHandler implements AuthenticationSuccessHandler {
                 String name = oauth2User.getAttribute("name").toString();
                 String picture = oauth2User.getAttribute("picture").toString();
 
-                user = User.builder()
+                User newuser = User.builder()
                         .name(googleId)
                         .email(email)
                         .image(picture)
+                        .enable(true)
                         .provider(Provider.GOOGLE)
                         .build();
 
-                userRepository.findByEmail(email).ifPresentOrElse(user1 -> {
-                    logger.info("User already exists: " + user1.getEmail());
-                    logger.info(user1.toString());
-                }, () -> {
-                    userRepository.save(user);
-                });
+                user = userRepository.findByEmail(email).orElseGet(() -> userRepository.save(newuser));
+
+
+            }
+            case "github" -> {
+                String githubId = oauth2User.getAttribute("id").toString();
+                String email = oauth2User.getAttribute("email").toString();
+                String name = oauth2User.getAttribute("name").toString();
+                String picture = oauth2User.getAttribute("avatar_url").toString();
+
+                User newuser = User.builder()
+                        .name(githubId)
+                        .email(email)
+                        .image(picture)
+                        .enable(true)
+                        .provider(Provider.GITHUB)
+                        .build();
+
+                user = userRepository.findByEmail(email).orElseGet(() -> userRepository.save(newuser));
 
             }
             default -> {
@@ -113,7 +131,8 @@ public class OAuthSuccessHandler implements AuthenticationSuccessHandler {
         cookieService.attachRefreshCookie(response, refreshToken, (int)jwtService.getRefreshTtlSeconds());
 
 
-        response.getWriter().write("OAuth2 authentication successful for user: " + authentication.getName());
+        // response.getWriter().write("OAuth2 authentication successful for user: " + authentication.getName());
+        response.sendRedirect(frontendSuccessUrl);
         
 
 
