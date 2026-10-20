@@ -113,8 +113,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override 
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String path = request.getRequestURI();
-        // Exclude the login and register endpoints from JWT authentication
-        return path.startsWith("/api/v1/auth/login");
+        // Public auth endpoints and browser preflight requests do not carry JWTs.
+        return "OPTIONS".equalsIgnoreCase(request.getMethod())
+                || path.equals("/api/v1/auth/register")
+                || path.equals("/api/v1/auth/login")
+                || path.equals("/api/v1/auth/refresh")
+                || path.equals("/api/v1/auth/logout");
     }
 
 

@@ -91,13 +91,21 @@ public class OAuthSuccessHandler implements AuthenticationSuccessHandler {
 
             }
             case "github" -> {
-                String githubId = oauth2User.getAttribute("id").toString();
-                String email = oauth2User.getAttribute("email").toString();
-                String name = oauth2User.getAttribute("name").toString();
-                String picture = oauth2User.getAttribute("avatar_url").toString();
+                String githubId = attributeAsString(oauth2User, "id");
+                String login = attributeAsString(oauth2User, "login");
+                String email = oauth2User.getAttribute("email");
+                String name = oauth2User.getAttribute("name");
+                String picture = oauth2User.getAttribute("avatar_url");
+
+                if (email == null || email.isBlank()) {
+                    email = login + "@users.noreply.github.com";
+                }
+                if (name == null || name.isBlank()) {
+                    name = login;
+                }
 
                 User newuser = User.builder()
-                        .name(githubId)
+                        .name(name)
                         .email(email)
                         .image(picture)
                         .enable(true)
@@ -136,6 +144,15 @@ public class OAuthSuccessHandler implements AuthenticationSuccessHandler {
         
 
 
+    }
+
+    private String attributeAsString(OAuth2User oauth2User, String attributeName) {
+        Object value = oauth2User.getAttributes().get(attributeName);
+        if (value == null) {
+            throw new IllegalStateException(
+                    "GitHub OAuth response is missing " + attributeName);
+        }
+        return value.toString();
     }
 
     

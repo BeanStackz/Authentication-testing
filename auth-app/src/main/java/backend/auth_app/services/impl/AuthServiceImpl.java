@@ -20,6 +20,9 @@ public class AuthServiceImpl implements AuthService {
 
         // Logic like verifying email, password strength, etc. can be added here before creating the user.
         // Default role assignment or other business logic can also be handled here.
+        if (userDto.getEnable() == null) {
+            userDto.setEnable(true);
+        }
         userDto.setPassword(passwordEncoder.encode(userDto.getPassword()));
         return userService.createUser(userDto);
 
